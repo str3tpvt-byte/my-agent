@@ -6,34 +6,8 @@ import subprocess
 from ai_client import ask_ai
 
 
-MEMORY_FILE = "memory.json"
-
-
-def load_memory():
-    if not os.path.exists(MEMORY_FILE):
-        return []
-
-    try:
-        with open(MEMORY_FILE, "r", encoding="utf-8") as file:
-            data = json.load(file)
-
-        if isinstance(data, list):
-            return data
-
-    except (json.JSONDecodeError, OSError):
-        pass
-
-    return []
-
-
-def save_memory(memory):
-    with open(MEMORY_FILE, "w", encoding="utf-8") as file:
-        json.dump(memory, file, indent=2)
-
-
 def tool_files():
     files = os.listdir(".")
-
     if not files:
         return "The project directory is empty."
 
@@ -77,9 +51,7 @@ TOOLS = {
 }
 
 
-def make_plan(request, memory):
-    recent_memory = memory[-10:]
-
+def make_plan(request):
     prompt = f"""
 You are the planning component of a Termux AI agent.
 
@@ -88,9 +60,6 @@ Available tools:
 - git: show Git repository status
 - system: show system/kernel information
 - time: show current date and time
-
-Recent conversation:
-{json.dumps(recent_memory, indent=2)}
 
 User request:
 {request}
@@ -125,41 +94,30 @@ Rules:
     ]
 
 
-def create_final_answer(request, results, memory):
-    recent_memory = memory[-10:]
-
+def create_final_answer(request, results):
     prompt = f"""
 You are the final-answer component of a Termux AI agent.
 
-Recent conversation:
-{json.dumps(recent_memory, indent=2)}
-
-Current user request:
+User request:
 {request}
 
 Tool results:
 {json.dumps(results, indent=2)}
 
-Answer the user's request using the conversation and tool results.
-
-Rules:
-- Be concise and factual.
-- Use previous conversation when relevant.
-- Do not claim that you performed actions that the tools did not perform.
+Answer the user's request using the tool results.
+Be concise and factual.
+Do not claim that you performed actions that the tools did not perform.
 """
 
     return ask_ai(prompt).strip()
 
 
 def main():
-    memory = load_memory()
-
     print("================================")
-    print("        MY AI AGENT v6")
+    print("        MY AI AGENT v5")
     print("================================")
-    print("Gemini-powered agent with memory.")
+    print("Gemini-powered multi-tool agent.")
     print("Type 'exit' to quit.")
-    print("Type 'clear memory' to erase memory.")
     print()
 
     while True:
@@ -173,55 +131,32 @@ def main():
                 print("Agent > Goodbye!")
                 break
 
-            if request.lower() == "clear memory":
-                memory = []
-                save_memory(memory)
-                print("Agent > Memory cleared.")
+            tools = make_plan(request)
+
+            if not tools:
+                print("Agent > No available tool is needed.")
                 print()
                 continue
 
-            memory.append({
-                "role": "user",
-                "content": request
-            })
+            print(
+                "Agent > Gemini plan: "
+                + ", ".join(tools)
+            )
 
-            tools = make_plan(request, memory)
+            results = {}
 
-            if tools:
-                print(
-                    "Agent > Gemini plan: "
-                    + ", ".join(tools)
-                )
+            for tool in tools:
+                print(f"Agent > Running {tool}...")
+                results[tool] = TOOLS[tool]()
 
-                results = {}
-
-                for tool in tools:
-                    print(f"Agent > Running {tool}...")
-                    results[tool] = TOOLS[tool]()
-
-                answer = create_final_answer(
-                    request,
-                    results,
-                    memory
-                )
-
-            else:
-                answer = create_final_answer(
-                    request,
-                    {},
-                    memory
-                )
+            answer = create_final_answer(
+                request,
+                results
+            )
 
             print("Agent >")
             print(answer)
             print()
-
-            memory.append({
-                "role": "assistant",
-                "content": answer
-            })
-
-            save_memory(memory)
 
         except KeyboardInterrupt:
             print("\nAgent > Goodbye!")

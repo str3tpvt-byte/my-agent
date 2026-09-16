@@ -1,0 +1,34 @@
+[
+  {
+    "role": "user",
+    "content": "My project is called my-agent."
+  },
+  {
+    "role": "assistant",
+    "content": "Got it. I have noted that your project is called \"my-agent\". How would you like to proceed with it in Termux?"
+  },
+  {
+    "role": "user",
+    "content": "What is my project called?"
+  },
+  {
+    "role": "assistant",
+    "content": "Your project is called \"my-agent\"."
+  },
+  {
+    "role": "user",
+    "content": "What is my project called?"
+  },
+  {
+    "role": "assistant",
+    "content": "Your project is called \"my-agent\"."
+  },
+  {
+    "role": "user",
+    "content": "git status"
+  },
+  {
+    "role": "assistant",
+    "content": "Here is the current git status for your project \"my-agent\":\n\n* **Modified:** `agent.py`\n* **Untracked:** `agent_v5_backup.py`, `memory.json`"
+  }
+]
