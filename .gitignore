@@ -1,3 +1,23 @@
+# Agent development backups
+agent_*_backup.py
+agent_before_*.py
+agent_v*_backup.py
+agent_v*_before_*.py
+agent_v*_working_backup.py
+agent_v*_source_backup.py
+agent_v*_patch.py
+agent_v*_broken.py
+add_v10_14.py
+
+# Local backup directories
+my-agent-backup/
+my-agent-backup-*/
+
+# Local project data
+facts.json
+notes.txt
+project.txt
+
+# Python cache
 __pycache__/
 *.pyc
-.env
