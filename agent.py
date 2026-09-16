@@ -1223,6 +1223,52 @@ def main():
 
             lower_request = request.lower()
 
+            # BATCH MODE
+            if lower_request == "batch":
+                print("Agent > Batch mode. Type commands one per line.")
+                print("Agent > Type 'end' to execute them.")
+                print()
+
+                batch_commands = []
+
+                while True:
+                    line = input("Batch > ").strip()
+
+                    if line.lower() == "end":
+                        break
+
+                    if line:
+                        batch_commands.append(line.lower())
+
+                local_git_commands = {
+                    "git remote": git_remote_info,
+                    "git log": git_log_info,
+                    "git diff": git_diff_info,
+                    "git info": git_info,
+                }
+
+                if not batch_commands:
+                    print("Agent > No commands entered.")
+                    print()
+                    continue
+
+                if all(
+                    command in local_git_commands
+                    for command in batch_commands
+                ):
+                    for command in batch_commands:
+                        local_git_commands[command]()
+                    continue
+
+                print("Agent > Batch contains unsupported commands.")
+                print("Agent > Supported local commands:")
+                print("  git remote")
+                print("  git log")
+                print("  git diff")
+                print("  git info")
+                print()
+                continue
+
             # HELP
             if lower_request in ("help", "commands", "?"):
                 show_help()
@@ -1250,29 +1296,26 @@ def main():
                 continue
 
             
-# GIT REMOTE INSPECTOR
-            if lower_request == "git remote":
-                git_remote_info()
-                continue
+# LOCAL GIT COMMAND DISPATCHER
+            local_git_commands = {
+                "git remote": git_remote_info,
+                "git log": git_log_info,
+                "git diff": git_diff_info,
+                "git info": git_info,
+            }
 
-            # GIT REMOTE INSPECTOR
-            if lower_request == "git remote":
-                git_remote_info()
-                continue
+            request_lines = [
+                line.strip()
+                for line in lower_request.splitlines()
+                if line.strip()
+            ]
 
-            # GIT LOG INSPECTOR
-            if lower_request == "git log":
-                git_log_info()
-                continue
-
-            # GIT DIFF INSPECTOR
-            if lower_request == "git diff":
-                git_diff_info()
-                continue
-
-            # GIT INSPECTOR
-            if lower_request == "git info":
-                git_info()
+            if request_lines and all(
+                line in local_git_commands
+                for line in request_lines
+            ):
+                for line in request_lines:
+                    local_git_commands[line]()
                 continue
 
             # STORAGE CLEANUP ADVISOR
