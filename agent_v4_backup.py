@@ -1,5 +1,4 @@
 import datetime
-import json
 import os
 import subprocess
 
@@ -51,72 +50,41 @@ TOOLS = {
 }
 
 
-def make_plan(request):
+def choose_tool_with_ai(request):
     prompt = f"""
-You are the planning component of a Termux AI agent.
+You are the tool selector for a Termux AI agent.
 
 Available tools:
 - files: list files in the current project
 - git: show Git repository status
 - system: show system/kernel information
-- time: show current date and time
+- time: show the current date and time
 
 User request:
 {request}
 
-Return ONLY valid JSON in this exact format:
-
-{{"tools":["files","git"]}}
-
-Rules:
-- Use only the available tool names.
-- Use the smallest number of tools necessary.
-- If no tool is needed, return {{"tools":[]}}.
-- Do not include markdown.
-- Do not explain anything outside the JSON.
+Return ONLY one of these exact words:
+files
+git
+system
+time
+none
 """
 
-    result = ask_ai(prompt).strip()
+    result = ask_ai(prompt).strip().lower()
 
-    try:
-        plan = json.loads(result)
-    except json.JSONDecodeError:
-        return []
+    for tool in TOOLS:
+        if result == tool:
+            return tool
 
-    selected = plan.get("tools", [])
-
-    if not isinstance(selected, list):
-        return []
-
-    return [
-        tool for tool in selected
-        if tool in TOOLS
-    ]
-
-
-def create_final_answer(request, results):
-    prompt = f"""
-You are the final-answer component of a Termux AI agent.
-
-User request:
-{request}
-
-Tool results:
-{json.dumps(results, indent=2)}
-
-Answer the user's request using the tool results.
-Be concise and factual.
-Do not claim that you performed actions that the tools did not perform.
-"""
-
-    return ask_ai(prompt).strip()
+    return None
 
 
 def main():
     print("================================")
-    print("        MY AI AGENT v5")
+    print("        MY AI AGENT v4")
     print("================================")
-    print("Gemini-powered multi-tool agent.")
+    print("Gemini-powered tool selection.")
     print("Type 'exit' to quit.")
     print()
 
@@ -131,31 +99,21 @@ def main():
                 print("Agent > Goodbye!")
                 break
 
-            tools = make_plan(request)
+            tool = choose_tool_with_ai(request)
 
-            if not tools:
-                print("Agent > No available tool is needed.")
+            if tool is None:
+                print(
+                    "Agent > I don't know which available tool "
+                    "can handle that request."
+                )
                 print()
                 continue
 
-            print(
-                "Agent > Gemini plan: "
-                + ", ".join(tools)
-            )
-
-            results = {}
-
-            for tool in tools:
-                print(f"Agent > Running {tool}...")
-                results[tool] = TOOLS[tool]()
-
-            answer = create_final_answer(
-                request,
-                results
-            )
+            print(f"Agent > Gemini selected: {tool}")
+            result = TOOLS[tool]()
 
             print("Agent >")
-            print(answer)
+            print(result)
             print()
 
         except KeyboardInterrupt:
