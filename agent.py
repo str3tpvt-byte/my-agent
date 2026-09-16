@@ -722,6 +722,36 @@ def collect_project_source():
     return collected
 
 
+def git_status_info():
+    print("\n=== GIT STATUS INSPECTOR ===")
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            ["git", "status", "--short", "--branch"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+
+        if result.returncode == 0:
+            output = result.stdout.strip()
+
+            if output:
+                print(output)
+            else:
+                print("Working tree is clean.")
+        else:
+            error = result.stderr.strip()
+            print(f"Git status failed: {error}")
+
+    except Exception as e:
+        print(f"Git status error: {e}")
+
+    print("============================")
+    print()
+
+
 def git_remote_info():
     print("\n=== GIT REMOTE INSPECTOR ===")
     import subprocess
@@ -1241,6 +1271,7 @@ def main():
                         batch_commands.append(line.lower())
 
                 local_git_commands = {
+                    "git status": git_status_info,
                     "git remote": git_remote_info,
                     "git log": git_log_info,
                     "git diff": git_diff_info,
@@ -1298,6 +1329,7 @@ def main():
             
 # LOCAL GIT COMMAND DISPATCHER
             local_git_commands = {
+                "git status": git_status_info,
                 "git remote": git_remote_info,
                 "git log": git_log_info,
                 "git diff": git_diff_info,
