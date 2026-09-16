@@ -3,15 +3,28 @@ import datetime
 import subprocess
 
 
-def list_files():
+def tool_files():
     files = os.listdir(".")
     if not files:
-        return "Directory is empty."
+        return "The project directory is empty."
 
     return "\n".join(f"- {file}" for file in files)
 
 
-def system_info():
+def tool_git():
+    result = subprocess.run(
+        ["git", "status", "--short"],
+        capture_output=True,
+        text=True
+    )
+
+    if result.returncode != 0:
+        return "This is not a Git repository."
+
+    return result.stdout.strip() or "Git working tree is clean."
+
+
+def tool_system():
     result = subprocess.run(
         ["uname", "-a"],
         capture_output=True,
@@ -20,83 +33,89 @@ def system_info():
     return result.stdout.strip()
 
 
-def git_status():
-    result = subprocess.run(
-        ["git", "status", "--short"],
-        capture_output=True,
-        text=True
+def tool_time():
+    return datetime.datetime.now().strftime(
+        "%Y-%m-%d %H:%M:%S"
     )
 
-    if result.returncode != 0:
-        return "This directory is not a Git repository."
 
-    return result.stdout.strip() or "Git working tree is clean."
+def choose_tool(request):
+    text = request.lower()
 
+    if any(word in text for word in [
+        "file", "files", "folder", "directory"
+    ]):
+        return "files"
 
-def show_help():
-    print("""
-Commands:
+    if any(word in text for word in [
+        "git", "commit", "repository", "repo", "changes"
+    ]):
+        return "git"
 
-  hello       Test the agent
-  time        Show current time
-  pwd         Show current directory
-  files       List files
-  system      Show system information
-  git         Show Git status
-  help        Show commands
-  exit        Quit
-""")
+    if any(word in text for word in [
+        "system", "device", "kernel", "architecture"
+    ]):
+        return "system"
 
+    if any(word in text for word in [
+        "time", "date"
+    ]):
+        return "time"
 
-def agent(command):
-    command = command.strip().lower()
-
-    if command == "hello":
-        return "Hello! Agent is working."
-
-    if command == "time":
-        return datetime.datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-
-    if command == "pwd":
-        return os.getcwd()
-
-    if command == "files":
-        return list_files()
-
-    if command == "system":
-        return system_info()
-
-    if command == "git":
-        return git_status()
-
-    if command == "help":
-        return show_help()
-
-    if command == "exit":
-        return None
-
-    return "I don't know that command yet. Type 'help'."
+    return None
 
 
-print("================================")
-print("        MY AI AGENT v2")
-print("================================")
-print("Type 'help' for commands.")
-print()
+def run_tool(tool):
+    if tool == "files":
+        return tool_files()
 
-while True:
-    try:
-        user_input = input("You > ")
-        result = agent(user_input)
+    if tool == "git":
+        return tool_git()
 
-        if result is None:
-            print("Agent > Goodbye!")
+    if tool == "system":
+        return tool_system()
+
+    if tool == "time":
+        return tool_time()
+
+    return "No suitable tool found."
+
+
+def main():
+    print("================================")
+    print("        MY AI AGENT v3")
+    print("================================")
+    print("Use natural language.")
+    print("Type 'exit' to quit.")
+    print()
+
+    while True:
+        try:
+            request = input("You > ").strip()
+
+            if request.lower() == "exit":
+                print("Agent > Goodbye!")
+                break
+
+            tool = choose_tool(request)
+
+            if tool is None:
+                print(
+                    "Agent > I don't know which tool to use yet."
+                )
+                continue
+
+            print(f"Agent > Using {tool} tool...")
+            result = run_tool(tool)
+
+            print("Agent >")
+            print(result)
+            print()
+
+        except KeyboardInterrupt:
+            print("\nAgent > Goodbye!")
             break
 
-        print("Agent >", result)
 
-    except KeyboardInterrupt:
-        print("\nAgent > Goodbye!")
-        break
+if __name__ == "__main__":
+    main()
