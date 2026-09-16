@@ -1,8 +1,6 @@
-import datetime
 import os
+import datetime
 import subprocess
-
-from ai_client import ask_ai
 
 
 def tool_files():
@@ -32,7 +30,6 @@ def tool_system():
         capture_output=True,
         text=True
     )
-
     return result.stdout.strip()
 
 
@@ -42,49 +39,53 @@ def tool_time():
     )
 
 
-TOOLS = {
-    "files": tool_files,
-    "git": tool_git,
-    "system": tool_system,
-    "time": tool_time,
-}
+def choose_tool(request):
+    text = request.lower()
 
+    if any(word in text for word in [
+        "file", "files", "folder", "directory"
+    ]):
+        return "files"
 
-def choose_tool_with_ai(request):
-    prompt = f"""
-You are the tool selector for a Termux AI agent.
+    if any(word in text for word in [
+        "git", "commit", "repository", "repo", "changes"
+    ]):
+        return "git"
 
-Available tools:
-- files: list files in the current project
-- git: show Git repository status
-- system: show system/kernel information
-- time: show the current date and time
+    if any(word in text for word in [
+        "system", "device", "kernel", "architecture"
+    ]):
+        return "system"
 
-User request:
-{request}
-
-Return ONLY one of these exact words:
-files
-git
-system
-time
-none
-"""
-
-    result = ask_ai(prompt).strip().lower()
-
-    for tool in TOOLS:
-        if result == tool:
-            return tool
+    if any(word in text for word in [
+        "time", "date"
+    ]):
+        return "time"
 
     return None
 
 
+def run_tool(tool):
+    if tool == "files":
+        return tool_files()
+
+    if tool == "git":
+        return tool_git()
+
+    if tool == "system":
+        return tool_system()
+
+    if tool == "time":
+        return tool_time()
+
+    return "No suitable tool found."
+
+
 def main():
     print("================================")
-    print("        MY AI AGENT v4")
+    print("        MY AI AGENT v3")
     print("================================")
-    print("Gemini-powered tool selection.")
+    print("Use natural language.")
     print("Type 'exit' to quit.")
     print()
 
@@ -92,25 +93,20 @@ def main():
         try:
             request = input("You > ").strip()
 
-            if not request:
-                continue
-
             if request.lower() == "exit":
                 print("Agent > Goodbye!")
                 break
 
-            tool = choose_tool_with_ai(request)
+            tool = choose_tool(request)
 
             if tool is None:
                 print(
-                    "Agent > I don't know which available tool "
-                    "can handle that request."
+                    "Agent > I don't know which tool to use yet."
                 )
-                print()
                 continue
 
-            print(f"Agent > Gemini selected: {tool}")
-            result = TOOLS[tool]()
+            print(f"Agent > Using {tool} tool...")
+            result = run_tool(tool)
 
             print("Agent >")
             print(result)
