@@ -725,8 +725,11 @@ def collect_project_source():
 def local_git_dispatch(command):
     git_commands = {
         "git status": git_status_info,
-        "git remote": git_remote_info,
+        "git status --short": git_status_info,
         "git log": git_log_info,
+        "git log -1": git_log_info,
+        "git log -5": git_log_info,
+        "git remote": git_remote_info,
         "git diff": git_diff_info,
         "git info": git_info,
     }
