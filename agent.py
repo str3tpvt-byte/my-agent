@@ -722,6 +722,24 @@ def collect_project_source():
     return collected
 
 
+def local_git_dispatch(command):
+    git_commands = {
+        "git status": git_status_info,
+        "git remote": git_remote_info,
+        "git log": git_log_info,
+        "git diff": git_diff_info,
+        "git info": git_info,
+    }
+
+    command = command.strip().lower()
+
+    if command in git_commands:
+        git_commands[command]()
+        return True
+
+    return False
+
+
 def git_status_info():
     print("\n=== GIT STATUS INSPECTOR ===")
     import subprocess
@@ -1270,25 +1288,12 @@ def main():
                     if line:
                         batch_commands.append(line.lower())
 
-                local_git_commands = {
-                    "git status": git_status_info,
-                    "git remote": git_remote_info,
-                    "git log": git_log_info,
-                    "git diff": git_diff_info,
-                    "git info": git_info,
-                }
-
                 if not batch_commands:
                     print("Agent > No commands entered.")
                     print()
                     continue
 
-                if all(
-                    command in local_git_commands
-                    for command in batch_commands
-                ):
-                    for command in batch_commands:
-                        local_git_commands[command]()
+                if all(local_git_dispatch(command) for command in batch_commands):
                     continue
 
                 print("Agent > Batch contains unsupported commands.")
@@ -1327,15 +1332,7 @@ def main():
                 continue
 
             
-# LOCAL GIT COMMAND DISPATCHER
-            local_git_commands = {
-                "git status": git_status_info,
-                "git remote": git_remote_info,
-                "git log": git_log_info,
-                "git diff": git_diff_info,
-                "git info": git_info,
-            }
-
+            # LOCAL GIT COMMAND DISPATCHER
             request_lines = [
                 line.strip()
                 for line in lower_request.splitlines()
@@ -1343,12 +1340,11 @@ def main():
             ]
 
             if request_lines and all(
-                line in local_git_commands
+                line.startswith("git ")
                 for line in request_lines
             ):
-                for line in request_lines:
-                    local_git_commands[line]()
-                continue
+                if all(local_git_dispatch(line) for line in request_lines):
+                    continue
 
             # STORAGE CLEANUP ADVISOR
             if lower_request == "storage advisor":
