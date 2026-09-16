@@ -1,36 +1,53 @@
+import os
 import requests
-from config import AI_API_KEY, AI_API_URL, AI_MODEL
 
 
-def ask_ai(messages):
-    if not AI_API_KEY:
-        return "AI_API_KEY is not configured."
+API_KEY = os.getenv("GEMINI_API_KEY")
+MODEL = "gemini-3.5-flash-lite"
 
-    if not AI_API_URL:
-        return "AI_API_URL is not configured."
+API_URL = (
+    f"https://generativelanguage.googleapis.com/"
+    f"v1beta/models/{MODEL}:generateContent"
+)
 
-    if not AI_MODEL:
-        return "AI_MODEL is not configured."
+
+def ask_ai(prompt):
+    if not API_KEY:
+        return "ERROR: GEMINI_API_KEY is not set."
 
     headers = {
-        "Authorization": f"Bearer {AI_API_KEY}",
+        "x-goog-api-key": API_KEY,
         "Content-Type": "application/json",
     }
 
     payload = {
-        "model": AI_MODEL,
-        "messages": messages,
+        "contents": [
+            {
+                "parts": [
+                    {
+                        "text": prompt
+                    }
+                ]
+            }
+        ]
     }
 
     response = requests.post(
-        AI_API_URL,
+        API_URL,
         headers=headers,
         json=payload,
         timeout=60,
     )
 
-    response.raise_for_status()
+    if response.status_code != 200:
+        return (
+            f"Gemini API error {response.status_code}: "
+            f"{response.text}"
+        )
 
     data = response.json()
 
-    return data["choices"][0]["message"]["content"]
+    try:
+        return data["candidates"][0]["content"]["parts"][0]["text"]
+    except (KeyError, IndexError):
+        return f"Unexpected Gemini response: {data}"
