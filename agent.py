@@ -1264,6 +1264,113 @@ Rules:
 
 
 # =========================
+
+def api_chat(request):
+    """API-safe v10.18 agent workflow."""
+
+    request = request.strip()
+
+    if not request:
+        return {
+            "status": "error",
+            "message": "message is required"
+        }
+
+    lower_request = request.lower()
+
+    blocked_prefixes = (
+        "run command ",
+        "write file ",
+        "create file ",
+        "append file ",
+        "delete file ",
+        "delete directory ",
+        "create directory ",
+        "edit file ",
+        "edit multiline file ",
+        "write multiline file ",
+        "backup project",
+        "clean project",
+    )
+
+    if lower_request.startswith(blocked_prefixes):
+        return {
+            "status": "blocked",
+            "message": (
+                "This operation is disabled through the public API. "
+                "Use the local Termux agent for approved changes."
+            )
+        }
+
+    memory = load_memory()
+    facts = load_facts()
+
+    facts = extract_facts(request, facts)
+
+    memory.append({
+        "role": "user",
+        "content": request
+    })
+    save_memory(memory)
+
+    tools = make_plan(request, memory, facts)
+    results = {}
+
+    if tools:
+        for tool in tools:
+            try:
+                if tool == "files":
+                    results[tool] = tool_files()
+
+                elif tool == "read_file":
+                    words = request.split()
+
+                    if len(words) >= 3:
+                        filename = words[-1]
+                        results[tool] = tool_read_file(filename)
+                    else:
+                        results[tool] = "No filename specified."
+
+                elif tool == "git":
+                    results[tool] = tool_git()
+
+                elif tool == "system":
+                    results[tool] = tool_system()
+
+                elif tool == "time":
+                    results[tool] = tool_time()
+
+                elif tool == "analyze_project":
+                    results[tool] = analyze_project()
+
+                else:
+                    results[tool] = f"Unsupported API tool: {tool}"
+
+            except Exception as error:
+                results[tool] = f"Tool error: {error}"
+
+    answer = create_final_answer(
+        request,
+        results,
+        memory,
+        facts
+    )
+
+    memory.append({
+        "role": "assistant",
+        "content": answer
+    })
+
+    save_memory(memory)
+
+    return {
+        "status": "success",
+        "message": answer,
+        "tools": tools,
+        "results": results
+    }
+
+
 # MAIN
 # =========================
 

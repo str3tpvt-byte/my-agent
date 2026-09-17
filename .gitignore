@@ -21,3 +21,8 @@ project.txt
 # Python cache
 __pycache__/
 *.pyc
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
