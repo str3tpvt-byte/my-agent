@@ -28,4 +28,10 @@ __pycache__/
 !.env.example
 
 memory.json
-memory.json
+
+# Local development backups
+*_backup.py
+*_before_*.py
+*_broken.py
+*_patch.py
+my-agent-backup*/
