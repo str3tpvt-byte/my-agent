@@ -726,9 +726,9 @@ def local_git_dispatch(command):
     git_commands = {
         "git status": git_status_info,
         "git status --short": git_status_info,
-        "git log": git_log_info,
-        "git log -1": git_log_info,
-        "git log -5": git_log_info,
+        "git log": lambda: git_log_info(),
+        "git log -1": lambda: git_log_info(1),
+        "git log -5": lambda: git_log_info(5),
         "git remote": git_remote_info,
         "git diff": git_diff_info,
         "git info": git_info,
@@ -797,29 +797,44 @@ def git_remote_info():
     print("============================\n")
 
 
-def git_log_info():
+def git_log_info(limit=None):
     print("\n=== GIT LOG INSPECTOR ===")
     import subprocess
 
     try:
+        command = ["git", "log"]
+
+        if limit is not None:
+            command.append(f"-{limit}")
+
+        command.extend([
+            "--oneline",
+            "--decorate",
+        ])
+
         result = subprocess.run(
-            ["git", "log", "-10", "--oneline", "--decorate"],
+            command,
             capture_output=True,
             text=True,
             timeout=10
         )
 
-        if result.returncode == 0 and result.stdout.strip():
-            print(result.stdout.strip())
-        elif result.returncode == 0:
-            print("No commits found.")
+        if result.returncode == 0:
+            output = result.stdout.strip()
+
+            if output:
+                print(output)
+            else:
+                print("No Git commits found.")
         else:
-            print("Git log unavailable.")
-    except Exception as error:
-        print(f"Git log failed: {type(error).__name__}")
+            error = result.stderr.strip()
+            print(f"Git log failed: {error}")
 
-    print("=========================\n")
+    except Exception as e:
+        print(f"Git log error: {e}")
 
+    print("==========================")
+    print()
 
 def git_diff_info():
     print("\n=== GIT DIFF INSPECTOR ===")
